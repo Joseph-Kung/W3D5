@@ -52,7 +52,13 @@ class SQLObject
   end
 
   def self.find(id)
-    # ...
+    find = DBConnection.execute(<<-SQL, id)
+            SELECT *
+            FROM "#{self.table_name}"
+            WHERE id = ?
+          SQL
+    return nil if find.empty?
+    self.new(find.first)
   end
 
   def initialize(params = {})
@@ -72,11 +78,25 @@ class SQLObject
   end
 
   def attribute_values
-    # ...
+    values = []
+
+    self.attributes.each do |k,v|
+      values << v
+    end
+
+    values
   end
 
   def insert
-    # ...
+    col_names = self.class.columns.drop(1).join(', ')
+    params = (['?'] * self.attribute_values.length).join(',')
+
+    DBConnection.execute(<<-SQL, *attribute_values)
+      INSERT INTO #{self.class.table_name} (#{col_names})
+      VALUES (#{params})
+    SQL
+
+    self.id = DBConnection.last_insert_row_id
   end
 
   def update
