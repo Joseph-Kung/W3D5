@@ -1,21 +1,31 @@
 require_relative 'db_connection'
 require 'active_support/inflector'
+require 'byebug'
 # NB: the attr_accessor we wrote in phase 0 is NOT used in the rest
 # of this project. It was only a warm up.
 
 class SQLObject
   def self.columns
-    @table ||= DBConnection.execute2(<<-SQL)
+    @columns ||= DBConnection.execute2(<<-SQL)
               SELECT
                 *
               FROM
               '#{self}s'
             SQL
 
-    @table = @table.first.map(&:to_sym) unless @table.first.is_a?(Symbol)
+    @columns = @columns.first.map(&:to_sym) unless @columns.first.is_a?(Symbol)
   end
 
   def self.finalize!
+    self.columns.each do |column|
+      define_method(column) do
+        self.attributes[column]
+      end
+
+      define_method("#{column}=") do |value|
+        self.attributes[column] = value
+      end
+    end
   end
 
   def self.table_name=(table_name)
@@ -43,7 +53,7 @@ class SQLObject
   end
 
   def attributes
-    # ...
+    @attributes ||= Hash.new
   end
 
   def attribute_values
