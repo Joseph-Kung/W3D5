@@ -17,6 +17,4 @@ end
 
 class SQLObject
   extend Searchable
-
-
 end
