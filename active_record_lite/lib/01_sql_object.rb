@@ -5,7 +5,14 @@ require 'active_support/inflector'
 
 class SQLObject
   def self.columns
-    # ...
+    @table ||= DBConnection.execute2(<<-SQL)
+              SELECT
+                *
+              FROM
+              '#{self}s'
+            SQL
+
+    @table = @table.first.map(&:to_sym) unless @table.first.is_a?(Symbol)
   end
 
   def self.finalize!
